@@ -5,5 +5,6 @@ package com.tcl.base.base;
  */
 
 public interface BaseView {
-
+    void onError(String errorString, int errorcode, int requestcode);
+    <T> void onSuccess(T t, int requestcode);
 }

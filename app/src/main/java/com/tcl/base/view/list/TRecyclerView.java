@@ -148,7 +148,7 @@ public class TRecyclerView<M extends BaseBean> extends FrameLayout implements Ad
         recyclerview.setLayoutManager(mLayoutManager);
         recyclerview.setItemAnimator(new DefaultItemAnimator());
 
-        mCommAdapter = new CoreAdapter<M>(recyclerview);
+        mCommAdapter = new CoreAdapter<M>();
         // mCommAdapter.setFooterViewType(0,null);
         //主要防止焦点消失
         mCommAdapter.setHasStableIds(true);

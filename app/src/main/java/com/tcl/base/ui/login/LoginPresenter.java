@@ -10,20 +10,19 @@ import com.tcl.base.net.ICallBack;
 
 public class LoginPresenter extends  LoginContract.Presenter{
 
-    private String url = "http://172.19.0.11:8080/HttpSerer/Login";
     @Override
     void login(String name, String pwd) {
-
+        String url = "http://172.19.0.11:8080/HttpSerer/Login";
         request.addParams("name",name)
                .addParams("password",pwd)
                .post(url, String.class, new ICallBack<String>() {
                    @Override
                    public void onFailure(String errorString, int errorCode, int requestCode) {
-                       mView.loginFailed();
+                       mView.onError(errorString,errorCode,requestCode);
                    }
                    @Override
                     public void onResponse(TResult<String> t) {
-                        mView.loginSuccess();
+                        mView.onSuccess(t.getData(),t.getRequestcode());
                     }
                 });
     }

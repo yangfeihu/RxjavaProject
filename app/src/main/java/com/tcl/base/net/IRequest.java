@@ -19,14 +19,12 @@ public interface IRequest<T> {
     //文件上传
     void uploadFile(String url,File file,IFileCallBack callBack);
 
-
-
     //添加参数
     IRequest addParams(String key, Object values);
     //添加参数
     IRequest addParams(Map<String, Object> map);
-    //添加参数
+    //添加参数（直接添加Json格式的字符串）
     IRequest addParams(String jsonString);
-    //添加请求码
+    //添加请求码(据此可以判断哪个请求返回的结果)
     IRequest addRequestCode(int requestCode);
 }

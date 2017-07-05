@@ -12,8 +12,7 @@ public interface LoginContract {
 
     //由activity去实现
     interface View extends BaseView {
-        void loginSuccess();
-        void loginFailed();
+
     }
     //用于处理业务逻辑
     abstract class Presenter extends BasePresenter<View> {

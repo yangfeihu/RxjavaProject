@@ -78,6 +78,7 @@ android {
             buildConfigField "boolean", "LOG_DEBUG", "true"
             //混淆文件
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable true
         }
     }
     packagingOptions{

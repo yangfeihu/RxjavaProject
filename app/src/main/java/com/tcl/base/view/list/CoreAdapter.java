@@ -9,7 +9,6 @@ import android.view.ViewGroup;
 import com.tcl.base.Config;
 import com.tcl.base.R;
 import com.tcl.base.model.BaseBean;
-import com.tcl.base.util.MainHandler;
 import com.zhy.autolayout.utils.AutoUtils;
 
 import java.util.ArrayList;
@@ -34,7 +33,6 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
     private int viewType;
     //尾部对应的lyout
     private int mFooterViewType = R.layout.list_footer_view;
-    //private int mFooterViewType = 0;
     //头部数据和尾部对应的数据,
     private Object mHeadData;
     //尾部的数据
@@ -42,17 +40,11 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
     private TRecyclerView.OnItemClickListener mOnItemClickListener;
     private TRecyclerView.OnFocusChangeListener mOnFocusChangeListener;
 
-    private int itemHeight;
-    public int getItemHeight(){ return itemHeight;}
-
-    private RecyclerView recyclerview;
-    public CoreAdapter(RecyclerView recyclerview){
-        this.recyclerview = recyclerview;
-    }
 
     public void setOnItemClickListener(TRecyclerView.OnItemClickListener onItemClickListener) {
         this.mOnItemClickListener = onItemClickListener;
     }
+
     public void setOnFocusChangeListener(TRecyclerView.OnFocusChangeListener onFocusChangeListener) {
         this.mOnFocusChangeListener = onFocusChangeListener;
     }
@@ -73,10 +65,10 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
         holder.itemView.setFocusable(true);
         holder.itemView.setClickable(true);
         if (mOnItemClickListener != null) {
-               holder.itemView.setOnClickListener(view -> mOnItemClickListener.onItemClick(holder, position, data));
+            holder.itemView.setOnClickListener(view -> mOnItemClickListener.onItemClick(holder, position, data));
         }
-        if(mOnFocusChangeListener != null) {
-            holder.itemView.setOnFocusChangeListener((v,b)->mOnFocusChangeListener.onFocusChange(b,holder,position,data));
+        if (mOnFocusChangeListener != null) {
+            holder.itemView.setOnFocusChangeListener((v, b) -> mOnFocusChangeListener.onFocusChange(b, holder, position, data));
         }
         holder.mViewDataBinding.executePendingBindings();
     }
@@ -133,36 +125,28 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
     }
 
 
-    public void cleanData(){
+    public void cleanData() {
         this.mItemList.clear();
     }
 
     /**
-     *
      * @param data 数据
      * @param begin 页面索引
      */
     int position = 0;
+
     public void setBeans(List<M> data, int begin) {
         if (data == null) data = new ArrayList<>();
         this.isHasMore = data.size() >= Config.PAGE_SIZE;
-         position = this.mItemList.size();
-        if(position <= 0){
+        position = this.mItemList.size();
+        if (position <= 0) {
             position = 0;
         }
-
         if (begin > 1) {
             this.mItemList.addAll(data);
-        }else{//如果是首页的数据
+        } else {//如果是首页的数据
             this.mItemList = data;
         }
-        MainHandler.getInstance().post(() -> {
-            notifyDataSetChanged();
-            //换页时焦点切换到下页顶部
-            /*if(position > 0) {
-                SystemClock.sleep(200);
-                recyclerview.smoothScrollToPosition(position);
-            }*/
-        });
+        notifyDataSetChanged();
     }
 }
