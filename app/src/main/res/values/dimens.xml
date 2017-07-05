@@ -1,0 +1,16 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+
+    //字体定义--对话框
+    <dimen name="LargestTextSize">30sp</dimen>
+    <dimen name="BigerTextSize">24sp</dimen>
+    <dimen name="BigTextSize">17sp</dimen>
+    <dimen name="NormalTextSize">16sp</dimen>
+    <dimen name="HintTextSize">14sp</dimen>
+    <dimen name="SmallerTextSize">13sp</dimen>
+    <dimen name="SmallestTextSize">12sp</dimen>
+
+
+</resources>

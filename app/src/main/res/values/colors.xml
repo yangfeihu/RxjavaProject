@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <!--对话框分割线-->
+    <color name="dark_grey">#ff7a7a7a</color>
+
+    <!--红色的按钮-->
+    <color name="btn_red">#ff4a4a</color>
+</resources>

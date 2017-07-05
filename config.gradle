@@ -1,0 +1,20 @@
+//此文件主要是为多个Module提供统一的配置
+ext {
+    android = [
+            compileSdkVersion : 25,
+            buildToolsVersion : "25.0.0",
+            minSdkVersion     : 15,
+            targetSdkVersion  : 24,
+            versionCode       : 1,
+            versionName       : "1.0"
+    ]
+
+    signingConfig = [
+            keyAlias       : "key",
+            keyPassword    : "10251224",
+            storeFile      : "key.jks",
+            storePassword  : "10251224",
+    ]
+
+
+}
