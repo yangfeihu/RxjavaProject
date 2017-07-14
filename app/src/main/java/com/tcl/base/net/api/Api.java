@@ -1,4 +1,4 @@
-package com.tcl.base.api;
+package com.tcl.base.net.api;
 
 /**
  * Created by yangfeihu on 2017/3/22.
@@ -26,9 +26,7 @@ import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
-/**
- * Created by yangfeihu on 2017/3/22.
- */
+
 public class Api {
     public Retrofit retrofit;
     public ApiService service;

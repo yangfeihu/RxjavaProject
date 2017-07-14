@@ -1,4 +1,4 @@
-package com.tcl.base.api;
+package com.tcl.base.net.api;
 
 /**
  * Created by yangfeihu on 2017/3/24.

@@ -8,14 +8,14 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
+import android.view.KeyEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import com.tcl.base.R;
-import com.tcl.base.model.BaseBean;
 import com.tcl.base.base.DataArr;
-import com.tcl.base.util.MainHandler;
+import com.tcl.base.model.BaseBean;
 
 import java.util.List;
 
@@ -33,31 +33,18 @@ public class TRecyclerView<M extends BaseBean> extends FrameLayout implements Ad
     private boolean isHasHeadView = false, isHasFootView = false, isEmpty = false, isReverse = false;
     private int headType, footType;
 
-
-    public interface IDataChange {
-        public <T> List<T> onDataChange(Object data);
-    }
-
     public interface OnItemClickListener {
-        public void onItemClick(BaseViewHolder viewHolder, int position, Object data);
-
-        public void onItemLOngClick(BaseViewHolder viewHolder, int position, Object data);
+        void onItemClick(BaseViewHolder viewHolder, int position, Object data);
+        void onItemLOngClick(BaseViewHolder viewHolder, int position, Object data);
     }
 
     public interface OnFocusChangeListener {
-        public void onFocusChange(boolean hasFocus, BaseViewHolder viewHolder, int position, Object data);
+        void onFocusChange(View view, boolean hasFocus, BaseViewHolder viewHolder, int position, Object data);
     }
 
-    public TRecyclerView setOnItemClickListener(OnItemClickListener onItemClickListener) {
-        mCommAdapter.setOnItemClickListener(onItemClickListener);
-        return this;
+    public interface OnKeyListener {
+        boolean onKey(View view, int i, KeyEvent keyEvent);
     }
-
-    public TRecyclerView setOnFocusChangeListener(OnFocusChangeListener onFocusChangeListener) {
-        mCommAdapter.setOnFocusChangeListener(onFocusChangeListener);
-        return this;
-    }
-
 
     public TRecyclerView(Context context) {
         super(context);
@@ -74,55 +61,9 @@ public class TRecyclerView<M extends BaseBean> extends FrameLayout implements Ad
         init(context, attrs);
     }
 
-
-    public TRecyclerView addParam(String key, String value) {
-        mCoreAdapterPresenter.addParams(key, value);
-        return this;
+    public AdapterPresenter getPresenter() {
+        return mCoreAdapterPresenter;
     }
-
-    public TRecyclerView addParam(String params) {
-        mCoreAdapterPresenter.addParams(params);
-        return this;
-    }
-
-    public TRecyclerView requestMyFocus() {
-        if (recyclerview != null) {
-            MainHandler.getInstance().postDelayed(() -> {
-                recyclerview.requestFocus();
-                recyclerview.getChildAt(0).requestFocus();
-            }, 3000);
-        }
-        return this;
-    }
-
-    //将服务器返回的数据进行处理
-    public TRecyclerView map(IDataChange dataSource) {
-        mCoreAdapterPresenter.setDataChange(dataSource);
-        return this;
-    }
-
-
-    public TRecyclerView setUrl(String url) {
-        mCoreAdapterPresenter.setUrl(url);
-        return this;
-    }
-
-    //服务器返回的类型
-    public TRecyclerView setClazz(Class<M> clazz) {
-        mCoreAdapterPresenter.setClazz(clazz);
-        return this;
-    }
-
-
-    public void fetch() {
-        mCoreAdapterPresenter.fetch();
-    }
-
-    public TRecyclerView setOrientation(int orientation) {
-        mLayoutManager.setOrientation(orientation);
-        return this;
-    }
-
 
     public void init(Context context, AttributeSet attrs) {
         TypedArray ta = getContext().obtainStyledAttributes(attrs, R.styleable.TRecyclerView);
@@ -142,16 +83,10 @@ public class TRecyclerView<M extends BaseBean> extends FrameLayout implements Ad
         swipeRefresh.setColorSchemeResources(android.R.color.holo_blue_bright);
         swipeRefresh.setOnRefreshListener(this::reFetch);
         recyclerview.setHasFixedSize(true);
-        mLayoutManager = new TopLayoutManager(context);
-        mLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-
+        mLayoutManager = new LinearLayoutManager(context);
         recyclerview.setLayoutManager(mLayoutManager);
         recyclerview.setItemAnimator(new DefaultItemAnimator());
-
         mCommAdapter = new CoreAdapter<M>();
-        // mCommAdapter.setFooterViewType(0,null);
-        //主要防止焦点消失
-        mCommAdapter.setHasStableIds(true);
         recyclerview.setAdapter(mCommAdapter);
         recyclerview.addOnScrollListener(new RecyclerView.OnScrollListener() {
             int lastVisibleItem;
@@ -172,23 +107,6 @@ public class TRecyclerView<M extends BaseBean> extends FrameLayout implements Ad
                 lastVisibleItem = mLayoutManager.findLastVisibleItemPosition();
             }
         });
-        //addOnItemTouchListener();
-        //但是在TV应用中存在一个焦点实现的问题，需要通过焦点的移
-        // 动来实现移动item，并且RV中没有setSelection方法，无
-        // 法指定初始情况下，默认选中哪个item。所以需要在
-        // RV获得焦点的时候，手动让它的子item获得焦点
-   /*     recyclerview.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                // Log.i("abc","hasfocus:"+hasFocus);
-                if (hasFocus) {
-                    if (recyclerview.getChildCount() > 0) {
-                        recyclerview.getChildAt(0).requestFocus();
-                    }
-                }
-            }
-        });*/
-
         ll_emptyView.setOnClickListener((view -> {
             isEmpty = false;
             ll_emptyView.setVisibility(View.GONE);
@@ -199,7 +117,7 @@ public class TRecyclerView<M extends BaseBean> extends FrameLayout implements Ad
         if (itemType != 0) setViewType(itemType);
         swipeRefresh.setEnabled(isRefreshable);
         if (isReverse) {
-            mLayoutManager.setStackFromEnd(true);//列表在底部开始展示，反转后由上面开始展示
+            mLayoutManager.setStackFromEnd(true);//列表再底部开始展示，反转后由上面开始展示
             mLayoutManager.setReverseLayout(true);//列表翻转
             recyclerview.setLayoutManager(mLayoutManager);
         }
@@ -226,17 +144,9 @@ public class TRecyclerView<M extends BaseBean> extends FrameLayout implements Ad
         this.mCommAdapter.setViewType(type);
     }
 
-    //用于添加本地数据
     public TRecyclerView<M> setData(List<M> data) {
         reSetEmpty();
         mCommAdapter.setBeans(data, 1);
-        mCommAdapter.setFooterViewType(0, null);
-        mCommAdapter.setHeadViewType(0, null);
-        return this;
-    }
-
-    public TRecyclerView cleanData() {
-        mCommAdapter.cleanData();
         return this;
     }
 
@@ -250,24 +160,19 @@ public class TRecyclerView<M extends BaseBean> extends FrameLayout implements Ad
     public void setEmpty() {
         if ((!isHasHeadView || isReverse && !isHasFootView) && !isEmpty) {
             isEmpty = true;
-            MainHandler.getInstance().post(()->{
-                ll_emptyView.setVisibility(View.VISIBLE);
-                swipeRefresh.setVisibility(View.GONE);
-            });
+            ll_emptyView.setVisibility(View.VISIBLE);
+            swipeRefresh.setVisibility(View.GONE);
         }
     }
 
     @Override
     public void setData(DataArr response, int begin) {
-        MainHandler.getInstance().post(() -> swipeRefresh.setRefreshing(false));
+        swipeRefresh.setRefreshing(false);
         mCommAdapter.setBeans(response.results, begin);
-        //请求的数据为空
-        if (begin == 1 && (response.results == null || response.results.size() == 0)) {
+        if (begin == 1 && (response.results == null || response.results.size() == 0))
             setEmpty();
-        } else if (isReverse) {
+        else if (isReverse)
             recyclerview.scrollToPosition(mCommAdapter.getItemCount() - response.results.size() - 2);
-        }
-
     }
 
     @Override

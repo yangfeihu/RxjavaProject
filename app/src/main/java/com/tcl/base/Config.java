@@ -26,11 +26,16 @@ public class Config {
     public static final String PARA_PAGE_SIZE = "page_size";
     public static final int PAGE_SIZE = 20;
     public static final int FLAG_MULTI_VH = 0x000001;
+
+    public static final String PAGE = "page";
+    public static final int PAGE_COUNT = 10;
     //log控制开关
     public static final boolean isDebug = true;
-
     //渠道配置
     public static final String CHANNEL_NAME = "CHANNEL";
     public static final String DEF_CHANNEL_NAME = "TCL";
+
+
+
 
 }

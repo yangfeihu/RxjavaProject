@@ -6,9 +6,10 @@ import com.tcl.base.R;
 import com.tcl.base.base.DataBindingActivity;
 import com.tcl.base.databinding.ActivityMainBinding;
 import com.tcl.base.model.Student;
-import com.tcl.base.view.list.TRecyclerView;
-
-import java.util.List;
+import com.tcl.base.net.IListCallBack;
+import com.tcl.base.net.IRequest;
+import com.tcl.base.net.ListResult;
+import com.tcl.base.net.RequestManager;
 
 /**
  * Created by yangfeihu on 2017/1/16.
@@ -24,18 +25,18 @@ public class MainActivity extends DataBindingActivity<ActivityMainBinding> {
     public void initView() {
         super.initView();
 
-        mViewBinding.list.setUrl(url).setClazz(Student.class).map(new TRecyclerView.IDataChange() {
+         IRequest request = RequestManager.getInstance().createRequest();
+        request.post(url, Student.class, new IListCallBack<Student>() {
             @Override
-            public  List onDataChange(Object data) {
-                if (data != null) {
-                    Student student = (Student) data;
-                    return student.infos;
-                } else {
-                    return null;
-                }
-            }
-        }) .fetch();
+            public void onFailure(String errorString, int errorCode, int requestCode) {
 
+            }
+
+            @Override
+            public void onResponse(ListResult<Student> t) {
+
+            }
+        });
     }
 
 }

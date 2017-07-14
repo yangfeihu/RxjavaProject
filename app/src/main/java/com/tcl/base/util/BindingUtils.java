@@ -11,11 +11,11 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
  */
 public class BindingUtils {
     @BindingAdapter({"imageUrl"})
-    public static void loadImg(ImageView v, String url) {
-        Glide.with(v.getContext())
+    public static void loadImg(ImageView img, String url) {
+        Glide.with(img.getContext())
                 .load(url)
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .into(v);
+                .into(img);
     }
 
 

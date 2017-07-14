@@ -17,6 +17,7 @@ public interface LoginContract {
     //用于处理业务逻辑
     abstract class Presenter extends BasePresenter<View> {
         abstract void login(String name,String pwd);
+        abstract void duobao(String pageNo,String pageSize);
     }
 
 }

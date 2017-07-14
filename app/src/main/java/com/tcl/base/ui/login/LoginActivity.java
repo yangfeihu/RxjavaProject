@@ -1,5 +1,7 @@
 package com.tcl.base.ui.login;
 
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Toast;
 
@@ -17,8 +19,28 @@ public class LoginActivity extends BaseActivity<LoginPresenter, ActivityLoginBin
         return R.layout.activity_login;
     }
 
+    @Override
+    public void initView() {
+        super.initView();
+        mViewBinding.root.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                Log.i("yangfeihu","root Touch");
+                return false;
+            }
+        });
+        mViewBinding.login.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                Log.i("yangfeihu","view Touch");
+                return false;
+            }
+        });
+    }
+
     public void onClick(View view) {
-        mPresenter.login(mViewBinding.name.getText().toString(), mViewBinding.password.getText().toString());
+        //mPresenter.login(mViewBinding.name.getText().toString(), mViewBinding.password.getText().toString());
+        mPresenter.duobao("50","20");
     }
 
     @Override

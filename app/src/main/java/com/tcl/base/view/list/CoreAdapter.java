@@ -40,7 +40,6 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
     private TRecyclerView.OnItemClickListener mOnItemClickListener;
     private TRecyclerView.OnFocusChangeListener mOnFocusChangeListener;
 
-
     public void setOnItemClickListener(TRecyclerView.OnItemClickListener onItemClickListener) {
         this.mOnItemClickListener = onItemClickListener;
     }
@@ -68,7 +67,7 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
             holder.itemView.setOnClickListener(view -> mOnItemClickListener.onItemClick(holder, position, data));
         }
         if (mOnFocusChangeListener != null) {
-            holder.itemView.setOnFocusChangeListener((v, b) -> mOnFocusChangeListener.onFocusChange(b, holder, position, data));
+            holder.itemView.setOnFocusChangeListener((v, b) -> mOnFocusChangeListener.onFocusChange(v,b, holder, position, data));
         }
         holder.mViewDataBinding.executePendingBindings();
     }
@@ -84,7 +83,7 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
     }
 
     public void setHeadViewType(@LayoutRes int i, Object data) {
-        this.isHasHeader = (i == 0 ? 0 : 1);
+        this.isHasHeader = i == 0 ? 0 : 1;
         if (isHasHeader == 1) {
             this.isHasHeader = 1;
             this.mHeadViewType = i;
@@ -101,13 +100,7 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
         }
     }
 
-    @Override
-    public long getItemId(int position) {
-        return position;
-    }
-
     public Object getItem(int position) {
-
         return isHasFooter == 1 && position + 1 == getItemCount()
                 ? (mFootData == null ? isHasMore : mFootData)
                 : isHasHeader == 1 && position == 0 ? mHeadData : mItemList.get(position - isHasHeader);
@@ -116,7 +109,7 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
     @Override
     public int getItemViewType(int position) {
         return isHasHeader == 1 && position == 0 ? mHeadViewType : (isHasFooter == 1 && position + 1 == getItemCount() ? mFooterViewType :
-                viewType == FLAG_MULTI_VH ? mTypeSelector.getType((M) getItem(position)) : viewType);
+                viewType == Config.FLAG_MULTI_VH ? mTypeSelector.getType((M) getItem(position)) : viewType);
     }
 
     @Override
@@ -124,29 +117,11 @@ public class CoreAdapter<M extends BaseBean> extends RecyclerView.Adapter<BaseVi
         return mItemList.size() + isHasFooter + isHasHeader;
     }
 
-
-    public void cleanData() {
-        this.mItemList.clear();
-    }
-
-    /**
-     * @param data 数据
-     * @param begin 页面索引
-     */
-    int position = 0;
-
     public void setBeans(List<M> data, int begin) {
         if (data == null) data = new ArrayList<>();
-        this.isHasMore = data.size() >= Config.PAGE_SIZE;
-        position = this.mItemList.size();
-        if (position <= 0) {
-            position = 0;
-        }
-        if (begin > 1) {
-            this.mItemList.addAll(data);
-        } else {//如果是首页的数据
-            this.mItemList = data;
-        }
+        this.isHasMore = data.size() >= Config.PAGE_COUNT;
+        if (begin > 1) this.mItemList.addAll(data);
+        else this.mItemList = data;
         notifyDataSetChanged();
     }
 }

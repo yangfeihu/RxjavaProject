@@ -1,4 +1,4 @@
-package com.tcl.base.api;
+package com.tcl.base.net.api;
 
 import java.util.Map;
 
@@ -11,6 +11,7 @@ import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.Part;
 import retrofit2.http.PartMap;
+import retrofit2.http.QueryMap;
 import retrofit2.http.Url;
 
 /**
@@ -22,12 +23,8 @@ public interface ApiService {
     @GET()
     Flowable<ResponseBody> get(
             @Url String url,
-            @Body Map<String,Object> maps);
+            @QueryMap Map<String,Object> maps);
 
-    @GET()
-    Flowable<ResponseBody> get(
-            @Url  String url,
-            @Body String jsonString);
 
     @POST()
     Flowable<ResponseBody> post(

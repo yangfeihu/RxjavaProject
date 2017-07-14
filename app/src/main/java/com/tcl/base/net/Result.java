@@ -1,4 +1,4 @@
-package com.tcl.base.model;
+package com.tcl.base.net;
 
 /**
  * Created by yangfeihu on 2017/1/5.
@@ -7,11 +7,9 @@ package com.tcl.base.model;
  */
 
 public class Result{
-
     private int resultcode = -1;
     private String resultmsg = "";
     private int requestcode = 0;
-
 
     public int getRequestcode() {
         return requestcode;
@@ -36,6 +34,7 @@ public class Result{
     public void setResultMsg(String resultMsg) {
         this.resultmsg = resultMsg;
     }
+
 
 }
 

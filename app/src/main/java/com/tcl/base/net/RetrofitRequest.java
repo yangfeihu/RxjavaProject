@@ -4,10 +4,12 @@ import android.os.Environment;
 import android.text.TextUtils;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import com.tcl.base.App;
-import com.tcl.base.api.Api;
-import com.tcl.base.api.ApiService;
-import com.tcl.base.model.TResult;
+import com.tcl.base.net.api.Api;
+import com.tcl.base.net.api.ApiService;
 import com.tcl.base.util.DepthClone;
 import com.tcl.base.util.JsonFormatUtil;
 import com.tcl.base.util.LogHelper;
@@ -23,7 +25,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.reactivex.Flowable;
@@ -50,11 +54,11 @@ import static com.tcl.base.util.ShadowClone.mapCopy;
 public class RetrofitRequest<T> implements IRequest {
 
     private final String TAG = "RetrofitRequest";
-    private HashMap<String,Object> mParaMap = new HashMap<>();
+    private HashMap<String, Object> mParaMap = new HashMap<>();
     private String mParaJsonString = null;
     private int requestCode = 0;
 
-    private static  RetrofitRequest INSTANCE = null;
+    private static RetrofitRequest INSTANCE = null;
     private ApiService service;
     private Gson mGson;
 
@@ -81,13 +85,19 @@ public class RetrofitRequest<T> implements IRequest {
 
     @Override
     public Disposable get(String url, Class clazz, ICallBack callBack) {
-        String newString = stringCopy(mParaJsonString);
-        if (TextUtils.isEmpty(newString)) {
-           return doSubscribe(service.get(url, mapCopy(mParaMap)), clazz, callBack, requestCode);
-        } else {
-            return  doSubscribe(service.get(url, newString), clazz, callBack, requestCode);
-        }
+        return doSubscribe(service.get(url, mapCopy(mParaMap)), clazz, callBack, requestCode);
     }
+
+    @Override
+    public Disposable get(String url, Class clazz, IListCallBack callBack) {
+        return doSubscribeByArray(service.get(url, mapCopy(mParaMap)), clazz, callBack, requestCode);
+    }
+
+    @Override
+    public Disposable getString(String url, ICallBack callBack) {
+        return doSubscribeByString(service.get(url, mapCopy(mParaMap)), callBack, requestCode);
+    }
+
 
     @Override
     public Disposable post(String url, Class clazz, ICallBack callBack) {
@@ -98,6 +108,206 @@ public class RetrofitRequest<T> implements IRequest {
             return doSubscribe(service.post(url, newString), clazz, callBack, requestCode);
         }
     }
+
+    @Override
+    public Disposable post(String url, Class clazz, IListCallBack callBack) {
+        String newString = stringCopy(mParaJsonString);
+        if (TextUtils.isEmpty(newString)) {
+            return doSubscribeByArray(service.post(url, mapCopy(mParaMap)), clazz, callBack, requestCode);
+        } else {
+            return doSubscribeByArray(service.post(url, newString), clazz, callBack, requestCode);
+        }
+    }
+
+    @Override
+    public Disposable postString(String url, ICallBack callBack) {
+        String newString = stringCopy(mParaJsonString);
+        if (TextUtils.isEmpty(newString)) {
+            return doSubscribeByString(service.post(url, mapCopy(mParaMap)), callBack, requestCode);
+        } else {
+            return doSubscribeByString(service.post(url, newString), callBack, requestCode);
+        }
+    }
+
+
+    //请求的数据不做任何的处理，直接以字符串的形式返回
+    private Disposable doSubscribeByArray(Flowable<ResponseBody> mObservable, Class claz, IListCallBack callBack, int requestCode) {
+        return mObservable.subscribeOn(Schedulers.io())//订阅在子线程
+                .unsubscribeOn(Schedulers.io())//取消订阅在子线程
+                .observeOn(AndroidSchedulers.mainThread())//回调发生在UI线程
+                .subscribe(
+                        //正常情况
+                        responseBody -> {
+                            String data = responseBody.string();
+                            doResponseForList(data, claz, callBack, requestCode);
+                            clean();//请求后还原数据
+                        },
+                        //异常的情况
+                        e -> {
+                            e.printStackTrace();
+                            LogHelper.i(TAG, "network abnormal");
+                            callBack.onFailure("network abnormal.", CODE_ERROE, requestCode);
+                            clean();//请求后还原数据
+                        }
+                );
+    }
+
+
+    private Disposable doSubscribe(Flowable<ResponseBody> mObservable, Class claz, ICallBack callBack, int requestCode) {
+        return mObservable.subscribeOn(Schedulers.io())//订阅在子线程
+                .unsubscribeOn(Schedulers.io())//取消订阅在子线程
+                .observeOn(AndroidSchedulers.mainThread())//回调发生在UI线程
+                .subscribe(
+                        //正常情况
+                        responseBody -> {
+                            String data = responseBody.string();
+                            doResponse(data, claz, callBack, requestCode);
+                            clean();//请求后还原数据
+                        },
+                        //异常的情况
+                        e -> {
+                            e.printStackTrace();
+                            LogHelper.i(TAG, "network abnormal");
+                            callBack.onFailure("network abnormal.", CODE_ERROE, requestCode);
+                            clean();//请求后还原数据
+                        }
+                );
+    }
+
+
+
+    //请求的数据不做任何的处理，直接以字符串的形式返回
+    private Disposable doSubscribeByString(Flowable<ResponseBody> mObservable,ICallBack callBack, int requestCode) {
+        return mObservable.subscribeOn(Schedulers.io())//订阅在子线程
+                .unsubscribeOn(Schedulers.io())//取消订阅在子线程
+                .observeOn(AndroidSchedulers.mainThread())//回调发生在UI线程
+                .subscribe(
+                        //正常情况
+                        responseBody -> {
+                            String data = responseBody.string();
+                            if(TextUtils.isEmpty(data)){
+                                LogHelper.i(TAG, "data is null.");
+                                callBack.onFailure("data is null.", CODE_ERROE, requestCode);
+                                return;
+                            }
+                            LogHelper.i(TAG, "****Response Data = \n" + JsonFormatUtil.formatJson(data));
+                            TResult<String> result = new TResult<>();
+                            result.setData(data);
+                            result.setRequestcode(requestCode);
+                            result.setResultCode(0);
+                            result.setResultMsg("");
+                            callBack.onResponse(result);
+                            clean();//请求后还原数据
+                        },
+                        //异常的情况
+                        e -> {
+                            e.printStackTrace();
+                            LogHelper.i(TAG, "network abnormal");
+                            callBack.onFailure("network abnormal.", CODE_ERROE, requestCode);
+                            clean();//请求后还原数据
+                        }
+                );
+    }
+
+    //处理返回的数据
+    private void doResponse(String data, final Class<T> clazz, final ICallBack<T> iCallBack, final int requestCode) {
+        LogHelper.i(TAG, "****Response Data = \n" + JsonFormatUtil.formatJson(data));
+        TResult<T> result = new TResult<>();
+        if (data == null) {//返回数量为空
+            LogHelper.i(TAG, "The data returned is empty");
+            iCallBack.onFailure("The data returned is empty.", CODE_ERROE, requestCode);
+            return;
+        }
+        try {
+            JSONTokener jsonParser = new JSONTokener(data);
+            JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
+            if (null == jsonObject) {//转换json错误
+                LogHelper.i(TAG, "It is not a Json String");
+                iCallBack.onFailure("It is not a Json String.", CODE_ERROE, requestCode);
+                return;
+            }
+            if (!jsonObject.has(RESULT_CODE)) {//数据不完整
+                LogHelper.i(TAG, "Ihe data is incomplete");
+                iCallBack.onFailure("The data is incomplete.", CODE_ERROE, requestCode);
+                return;
+            }
+            if (jsonObject.getInt(RESULT_CODE) != CODE_SUCCESS) {//服务器返回错误的结果
+                iCallBack.onFailure(jsonObject.getString(RESULT_MSG), jsonObject.getInt(RESULT_CODE), requestCode);
+                return;
+            }
+            result.setRequestcode(requestCode);
+            result.setResultCode(jsonObject.getInt(RESULT_CODE));
+            if (jsonObject.has(RESULT_MSG)) {
+                result.setResultMsg(jsonObject.getString(RESULT_MSG));
+            }
+            if (jsonObject.has(RESULT_DATA)) {
+                data = jsonObject.getString(RESULT_DATA);
+                if (!clazz.equals(Void.class)) {
+                    //需要转换的为基本数据类型
+                    if (clazz.equals(String.class) || clazz.getSuperclass().equals(Number.class)) {
+                        T t = castValue(data, clazz);
+                        result.setData(t);
+                    } else {
+                        result.setData(mGson.fromJson(data, clazz));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            iCallBack.onFailure("Type mismatch.", CODE_ERROE, requestCode);
+            return;
+        }
+        iCallBack.onResponse(result);
+    }
+
+    //处理返回的数据,返回的List<T>类型
+    private void doResponseForList(String data, final Class<T> claz, final IListCallBack<T> iCallBack,int requestCode) {
+        LogHelper.i(TAG, "****Response Data = \n" + JsonFormatUtil.formatJson(data));
+        ListResult<T> result = new ListResult<>();
+        if (data == null) {//返回数量为空
+            iCallBack.onFailure("The data returned is empty.",CODE_ERROE, requestCode);
+            return;
+        }
+        try {
+            JSONTokener jsonParser = new JSONTokener(data);
+            JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
+            if (null == jsonObject) {//转换json错误
+                LogHelper.i(TAG, "It is not a Json String");
+                iCallBack.onFailure("It is not a Json String.", CODE_ERROE, requestCode);
+                return;
+            }
+            if (!jsonObject.has(RESULT_CODE)) {//数据不完整
+                LogHelper.i(TAG, "Ihe data is incomplete");
+                iCallBack.onFailure("The data is incomplete.", CODE_ERROE, requestCode);
+                return;
+            }
+            if (jsonObject.getInt(RESULT_CODE) != CODE_SUCCESS) {//服务器返回错误的结果
+                iCallBack.onFailure(jsonObject.getString(RESULT_MSG), jsonObject.getInt(RESULT_CODE), requestCode);
+                return;
+            }
+            result.setRequestcode(requestCode);
+            result.setResultCode(jsonObject.getInt(RESULT_CODE));
+            result.setResultMsg(jsonObject.getString(RESULT_MSG));
+            String listData = jsonObject.getString(RESULT_DATA);
+            // List<T> list =  mGson.fromJson(listData, new TypeToken<List<T>>(){}.getType());
+
+            List<T> list = new ArrayList<>();
+            JsonArray array = new JsonParser().parse(listData).getAsJsonArray();
+            for (final JsonElement elem : array) {
+                list.add(new Gson().fromJson(elem, claz));
+            }
+            result.setData(list);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            iCallBack.onFailure("Type mismatch.",CODE_ERROE, requestCode);
+            return;
+        }
+        iCallBack.onResponse(result);
+    }
+
+
+
 
     @Override
     public void download(String url, IFileCallBack callBack) {
@@ -199,77 +409,6 @@ public class RetrofitRequest<T> implements IRequest {
     }
 
 
-    private Disposable doSubscribe(Flowable<ResponseBody> mObservable, Class claz, ICallBack callBack, int requestCode) {
-       return mObservable.subscribeOn(Schedulers.io())//订阅在子线程
-                .unsubscribeOn(Schedulers.io())//取消订阅在子线程
-                .observeOn(AndroidSchedulers.mainThread())//回调发生在UI线程
-                .subscribe(
-                        //正常情况
-                        responseBody -> {
-                            String data = responseBody.string();
-                            doResponse(data, claz, callBack, requestCode);
-                            clean();//请求后还原数据
-                        },
-                        //异常的情况
-                        e -> {
-                            e.printStackTrace();
-                            LogHelper.i(TAG, "network abnormal");
-                            callBack.onFailure("network abnormal.", CODE_ERROE, requestCode);
-                            clean();//请求后还原数据
-                        }
-                );
-    }
-
-    //处理返回的数据
-    private void doResponse(String data, final Class<T> clazz, final ICallBack<T> iCallBack, final int requestCode) {
-        LogHelper.i(TAG, "****Response Data = \n" + JsonFormatUtil.formatJson(data));
-        TResult<T> result = new TResult<>();
-        if (data == null) {//返回数量为空
-            LogHelper.i(TAG, "The data returned is empty");
-            iCallBack.onFailure("The data returned is empty.", CODE_ERROE, requestCode);
-            return;
-        }
-        try {
-            JSONTokener jsonParser = new JSONTokener(data);
-            JSONObject jsonObject = (JSONObject) jsonParser.nextValue();
-            if (null == jsonObject) {//转换json错误
-                LogHelper.i(TAG, "It is not a Json String");
-                iCallBack.onFailure("It is not a Json String.", CODE_ERROE, requestCode);
-                return;
-            }
-            if (!jsonObject.has(RESULT_CODE)) {//数据不完整
-                LogHelper.i(TAG, "Ihe data is incomplete");
-                iCallBack.onFailure("The data is incomplete.", CODE_ERROE, requestCode);
-                return;
-            }
-            if (jsonObject.getInt(RESULT_CODE) != CODE_SUCCESS) {//服务器返回错误的结果
-                iCallBack.onFailure(jsonObject.getString(RESULT_MSG), jsonObject.getInt(RESULT_CODE), requestCode);
-                return;
-            }
-            result.setRequestcode(requestCode);
-            result.setResultCode(jsonObject.getInt(RESULT_CODE));
-            if (jsonObject.has(RESULT_MSG)) {
-                result.setResultMsg(jsonObject.getString(RESULT_MSG));
-            }
-            if (jsonObject.has(RESULT_DATA)) {
-                data = jsonObject.getString(RESULT_DATA);
-                if (!clazz.equals(Void.class)) {
-                    //需要转换的为基本数据类型
-                    if (clazz.equals(String.class) || clazz.getSuperclass().equals(Number.class)) {
-                        T t = castValue(data, clazz);
-                        result.setData(t);
-                    } else {
-                        result.setData(mGson.fromJson(data, clazz));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            iCallBack.onFailure("Type mismatch.", CODE_ERROE, requestCode);
-            return;
-        }
-        iCallBack.onResponse(result);
-    }
 
     private T castValue(String data, Class<T> clazz) {
         try {
